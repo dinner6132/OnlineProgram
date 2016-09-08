@@ -1,4 +1,4 @@
 論文程式
 
-Offline 接收離線BLE訊號
-儲存txt檔提供離線處理
+Online 掃描環境中iBeacon訊號
+將RSSI訊號過濾後跟離線訊號比對
