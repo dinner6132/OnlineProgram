@@ -9,9 +9,11 @@
     NSTimer *timer;
     NSTimer *timer2;
 }
+@property (strong, nonatomic) IBOutlet UILabel *AppVersionLabel;
 @property (strong, nonatomic) IBOutlet UILabel *fileTextLabel;
 @property (strong, nonatomic) IBOutlet UILabel *ErrorData;
 @property (strong, nonatomic) IBOutlet UILabel *dirTextLabel;
+@property (strong, nonatomic) IBOutlet UILabel *KLabel;
 
 @property (weak, nonatomic) IBOutlet UILabel *HeadingTextLabel;
 @property (weak, nonatomic) IBOutlet UILabel *pointLabel;

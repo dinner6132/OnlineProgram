@@ -85,6 +85,7 @@ BOOL isBeaconWithUUIDMajorMinor(CLBeacon *beacon, NSString *UUIDString, CLBeacon
 
 static double heading;
 static int file_count;
+static int dir_count;
 
 static float iB_R[10];  //beacon數量
 
@@ -93,47 +94,28 @@ static float iB_on[4];  //distance online data
 static float x,y,t1,t2,t_temp,error_data; //座標累加
 static float final_x,final_y;
 static float point_value =0;
+static int k;
 
 
 //filter
+static int action_temp = 0;
 static int filter_count = 0;
-static float signal_filter[4][30];
+static float signal_filter[4][7];
 
-static float iB_of_AVG[4][24]={
-    {-79.15116995,-76.43103448,-80.53065134,-83.12931034,-85.4137931,-85.2179803,-84.53756158,-83.54310345,-80.87068966,-83.04587438,-79.48275862,-75.84482759,-80.84667488,-83.82758621,-82.47413793,-84.48183498,-82.57758621,-84.34482759,-84.77586207,-86.74353448,-82.72814039,-83.0591133,-80.87931034,-79.56034483},
-    {-86.54064039,-87.56604634,-86.93518519,-89.18197957,-88.27283358,-87.97811671,-88.11034483,-82.90517241,-88.73212005,-85.12931034,-83.97877984,-89.54125616,-87.79310345,-85.26724138,-86.06834975,-88.41899288,-84.43103448,-86.44827586,-85.4104064,-83.7533867,-84.00708128,-81.31896552,-86.60664112,-88.07423372},
-    {-78.61206897,-78.60344828,-78.45320197,-75.63793103,-79.57758621,-73.42364532,-72.07758621,-76.19827586,-75.35344828,-75.76724138,-79.94827586,-80.11206897,-79.43965517,-77.92241379,-78.25862069,-76.53448276,-77.02586207,-74.12068966,-76.3362069,-78.72413793,-79.21551724,-80.04310345,-80.95320197,-83.32758621},
-    {-82.27514368,-79.66779557,-78.88762315,-80.51416256,-79.97814039,-81.26200739,-82.67274536,-81.17750568,-81.4171798,-81.22229064,-83.59359606,-85.64688329,-82.9811622,-85.07788177,-82.93585796,-84.52770936,-82.92975734,-80.21305419,-84.39655172,-85.97844828,-84.26262315,-83.21397783,-85.68811576,-85.25}
-};//Offline AVERAGE 0426-data -4 -8
+//Offline AVERAGE off-data alldif
+// static float iB_of_AVG[4][56]={
+//     {-81.449999,-82.424999,-82.125,-79.6000005,-78.749998,-75.3999975,-77.39999975,-76.29999925,-76.1499995,-73.20000075,-69.7250005,-69.35000025,-71.27499925,-71.30000125,-63.34999825,-68.00000025,-71.674999,-74.674999,-72.37500025,-76.80000125,-75.02499975,-74.6500015,-77.2749995,-78.37499975,-81.29999925,-81.4750005,-83.04999925,-81.450001,-79.27499975,-81.3500005,-82.07500075,-79.8999995,-76.77499975,-77.424999,-76.25000175,-75.04999925,-78.17500125,-75.07500075,-76.5750005,-74.0999985,-68.24999925,-66.57500175,-67.19999775,-69.74999775,-70.95000075,-73.5,-74.375,-77.29999725,-77.699999,-75.2250005,-77.050001,-80.22500025,-78.82500075,-78.04999925,-78.75,-79.65000175},
+//     {-88.375,-87.875,-85.3249985,-77.2250005,-78.42499725,-84.92499925,-86.5749985,-85.800001,-91.12500025,-91.57499875,-92.5999985,-93.75,-93.07499875,-93.574999,-93.624998,-92.875,-93.824999,-93.15000175,-91.27499975,-88.49999975,-90.200001,-87.92500125,-83.67500125,-83.375,-80.55000125,-84.5,-86.70000075,-87.55000125,-86.52499975,-87.125,-85.3000015,-83.27499975,-86.8250005,-86.22500225,-88.0249995,-90.42499925,-90.175001,-92.74999825,-93.24999975,-91.02499775,-92.1499995,-91.92500125,-92.70000075,-92.50000025,-92.3999995,-90.97499825,-92.924999,-89.57499875,-87.875,-88.875,-83.02499975,-86.125,-84.69999875,-89.3500005,-86.47500025,-87.39999775},
+//     {-68.800001,-72.75,-71.074997,-74.550001,-74.49999825,-76.450001,-78.14999975,-77.425001,-78.5,-79.10000025,-80.15000175,-81.42499925,-84.125002,-80.72500225,-81.29999925,-81.57499875,-83.574999,-83.1750015,-80.64999975,-81.25,-78.65000175,-78.37499975,-76.500002,-74.700001,-74.375,-71.19999875,-70.625,-64.32500075,-61.17500025,-67.37500175,-72,-73.1499995,-74.45000075,-76.174999,-77.6750015,-77.375,-77.2250025,-81.25,-82.5249995,-82.45000075,-81.1500015,-81.77499975,-80.3999975,-80.375,-81.1499995,-80.2250005,-79.6000025,-75.2749995,-75.07500075,-76.825001,-76.79999925,-75.25,-73,-72.62500025,-67.37500175,-67.79999925},
+//     {-93.92500125,-93.67499925,-93.07499875,-92.74999975,-91.17499925,-88.62499975,-85.5,-87.1500015,-84.875002,-86.62499975,-87.17500125,-88.10000075,-89.89999975,-89.4750005,-90.32499875,-90.30000125,-89.22499825,-87.22500025,-84.875,-86.6000025,-82.82499875,-89.04999925,-90.45000075,-90.575001,-92.125,-91.8999995,-92.25,-93.20000075,-94.074999,-94.2749995,-94.6000005,-93.57499875,-91.90000175,-86.02500175,-87.7250005,-81.37500225,-83.3499985,-84.25,-89.17500125,-90.5,-87.7250005,-92.575001,-93.5,-91.4000015,-89.97500025,-89,-83.7250005,-73.325001,-78.10000075,-85.57500075,-88,-91.72500075,-91.22500025,-91.0750005,-92.49999975,-94.125}
+// };//Offline - 行政大樓 發射功率全部不同
 
-//0426 方向 -4-8
-static float iB_of_E[4][24]={
-    {-75.75862069,-74.03448276,-81.77777778,-81.65517241,-84.72413793,-84.89655172,-90.03448276,-85.82758621,-78.75862069,-84.27586207,-80.24137931,-78.13793103,-85.21428571,-84.72413793,-82.34482759,-88,-84.86206897,-85.34482759,-88.75862069,-89.53571429,-84.06896552,-86.55172414,-82.75862069,-88.4137931},
-    {-85.89655172,-85.4137931,-84.51724138,-86.10344828,-81.55172414,-83.48275862,-81.82758621,-80.55172414,-89,-83.17241379,-84.48275862,-91.51724138,-90,-85.51724138,-85.13793103,-91.71428571,-81.06896552,-81,-84.55172414,-79.34482759,-83.82142857,-81.51724138,-85.62068966,-87.96551724},
-    {-81.34482759,-77.72413793,-81.57142857,-76.48275862,-80.5862069,-72.27586207,-67.68965517,-74.86206897,-74.06896552,-76.86206897,-79.68965517,-79.68965517,-83.13793103,-81.51724138,-77,-76.82758621,-75.75862069,-71.79310345,-80.03448276,-77.4137931,-79.4137931,-82.82758621,-79.44827586,-87.5862069},
-    {-84.58333333,-82.46428571,-75.96428571,-81.64285714,-81.46428571,-81.25,-81.34615385,-81.82142857,-80.39285714,-79.78571429,-84.85714286,-86.34615385,-87.74074074,-85.71428571,-80.89285714,-84.35714286,-83.92592593,-79.10714286,-84,-88.5,-84.46428571,-80.82142857,-85.35714286,-85.57142857}
-};//Offline-East
-
-static float iB_of_S[4][24]={
-    {-82.10344828,-75.75862069,-79.93103448,-81.72413793,-83.75862069,-86.93103448,-86.27586207,-84,-80.62068966,-83.72413793,-79.93103448,-74,-78.48275862,-86,-79.55172414,-82.89285714,-82.48275862,-85.06896552,-82.24137931,-84.86206897,-82.06896552,-83.62068966,-80.51724138,-75.55172414},
-    {-88.71428571,-86.44827586,-89.74074074,-93.12,-92.43478261,-88.37931034,-92.10344828,-83.89655172,-92.96296296,-87.82758621,-87.84615385,-89.78571429,-86.24137931,-82.34482759,-83.92857143,-87.96551724,-84.31034483,-87.03448276,-88.60714286,-86.65517241,-83.24137931,-82.10344828,-83.89655172,-83.10344828},
-    {-76.03448276,-79.24137931,-76.13793103,-74.65517241,-78.4137931,-67.14285714,-68.96551724,-73.79310345,-70.62068966,-74.51724138,-78.48275862,-75.17241379,-74.4137931,-73.4137931,-77.17241379,-73.62068966,-77.24137931,-75.13793103,-73.62068966,-77.79310345,-78.4137931,-75.96551724,-84.4137931,-82.17241379},
-    {-81.93103448,-75.4137931,-85.79310345,-80.72413793,-82.86206897,-82.14285714,-85.20689655,-82.4137931,-82.79310345,-84.82758621,-80.86206897,-86.62068966,-82.34482759,-90.03448276,-83,-84.31034483,-82.27586207,-78.96551724,-86.62068966,-87.51724138,-85.51724138,-86.68965517,-86.44827586,-82}
-};//Offline-South
-
-static float iB_of_W[4][24]={
-    {-80.53571429,-79.03448276,-82.82758621,-84.89655172,-86.96551724,-84.28571429,-83.35714286,-85.75862069,-86,-86.32142857,-81.89655172,-74.96551724,-82.4137931,-83,-84.86206897,-84.86206897,-83.68965517,-82.27586207,-86.89655172,-85.86206897,-84.46428571,-80.85714286,-78.34482759,-80.48275862},
-    {-87.34482759,-85.25925926,-84.72413793,-87.68965517,-90.34482759,-91.89655172,-91.2,-83.75862069,-85.65517241,-85.79310345,-81.51724138,-88.03448276,-86.96551724,-85.34482759,-88.4137931,-89.44444444,-86.20689655,-87.93103448,-84.51724138,-88.39285714,-86.44827586,-79.31034483,-87.72413793,-88.17241379},
-    {-78.48275862,-81.03448276,-79.4137931,-74.75862069,-79.10344828,-79.24137931,-79.20689655,-79.72413793,-78.82758621,-75.62068966,-80.13793103,-80.44827586,-80.44827586,-76.4137931,-77.96551724,-76.75862069,-78.65517241,-75.65517241,-74.03448276,-82.79310345,-80.5862069,-79.89655172,-82.57142857,-79.89655172},
-    {-77.10344828,-77.06896552,-71.06896552,-75.79310345,-76.4137931,-78.10344828,-83.89655172,-78.55172414,-79.51724138,-76.4137931,-79.48275862,-80.72413793,-77.17241379,-76.48275862,-82.33333333,-82.5862069,-84,-77.17241379,-80.4137931,-80.4137931,-84.34482759,-81.48275862,-82.48275862,-82.21428571}
-};//Offline-West
-
-static float iB_of_N[4][24]={
-    {-78.20689655,-76.89655172,-77.5862069,-84.24137931,-86.20689655,-84.75862069,-78.48275862,-78.5862069,-78.10344828,-77.86206897,-75.86206897,-76.27586207,-77.27586207,-81.5862069,-83.13793103,-82.17241379,-79.27586207,-84.68965517,-81.20689655,-86.71428571,-80.31034483,-81.20689655,-81.89655172,-73.79310345},
-    {-84.20689655,-93.14285714,-88.75862069,-89.81481481,-88.76,-88.15384615,-87.31034483,-83.4137931,-87.31034483,-83.72413793,-82.06896552,-88.82758621,-87.96551724,-87.86206897,-86.79310345,-84.55172414,-86.13793103,-89.82758621,-83.96551724,-80.62068966,-82.51724138,-82.34482759,-89.18518519,-93.05555556},
-    {-78.5862069,-76.4137931,-76.68965517,-76.65517241,-80.20689655,-75.03448276,-72.44827586,-76.4137931,-77.89655172,-76.06896552,-81.48275862,-85.13793103,-79.75862069,-80.34482759,-80.89655172,-78.93103448,-76.44827586,-73.89655172,-77.65517241,-76.89655172,-78.44827586,-81.48275862,-77.37931034,-83.65517241},
-    {-85.48275862,-83.72413793,-82.72413793,-83.89655172,-79.17241379,-83.55172414,-80.24137931,-81.92307692,-82.96551724,-83.86206897,-89.17241379,-88.89655172,-84.66666667,-88.08,-85.51724138,-86.85714286,-81.51724138,-85.60714286,-86.55172414,-87.48275862,-82.72413793,-83.86206897,-88.46428571,-91.21428571}
-};//Offline-North
+static float iB_of_AVG[4][56]={
+    {-86.37828551,-88.42586207 ,-87.95674584 ,-86.19731801 ,-82.39854111 ,-77.50862069 ,-74.80172414 ,-74.02681992 ,-77.88793103 ,-72.70146871 ,-70.11206897 ,-68.37931034 ,-68.5,-64.80172414 ,-66.56034483 ,-70.38793103 ,-69.55172414 ,-73.05172414 ,-75.30172414 ,-76.79310345 ,-78.31834975 ,-77.13601533 ,-79.91009852 ,-82.17087438 ,-82.33746641 ,-84.7055624 -84.36543198 ,-80.63956167 ,-81.28448276 ,-81.08189655 ,-79.93965517 ,-77.59482759 ,-80.78344508 ,-77.22075123 ,-76 -74.17241379 ,-76.30726601 ,-76.64655172 ,-74.0895936 -72.48275862 ,-66.15517241 ,-64.03448276 ,-67.81896552 ,-73.27586207 ,-77.41133005 ,-80.9137931 -83.79788746 ,-84.43681319 ,-85.27850231 ,-88.17019231 ,-86.61254789 ,-88.2646928 -89.297653  -89.21577381 ,-89.73205128 ,-89.11580688},
+    {-82.48275862,-77.81034483 ,-74.43103448 ,-72.60344828 ,-73.25  -78.31034483 ,-81.02555419 ,-85.05603448 ,-84.68764778 ,-83.19508301 ,-87.09473388 ,-88.1275 ,-87.39880952 ,-87.98463022 ,-89.40659341 ,-88.18892045 ,-85.41926804 ,-87.22267316 ,-83.44435848 ,-84.95777283 ,-81.49409893 ,-81.16995074 ,-77.00862069 ,-75.97444581 ,-75.59482759 ,-79.50440757 ,-79.4457266 -82.26724138 ,-77.94827586 ,-77.48275862 ,-78.05172414 ,-77.38793103 ,-79.69950739 ,-76.94796798 ,-78.75  -82.53448276 ,-84.0706254 -86.4507347 -86.79809113 ,-86.69220945 ,-84.82296798 ,-86.42774585 ,-84.64066411 ,-85.30049261 ,-87.68449959 ,-87.01724138 ,-87.56570513 ,-86.6454023 -82.67041826 ,-80.5862069 -76.76724138 ,-77.64655172 ,-81.28140394 ,-77.9341133 -80.28448276 ,-79.81034483},
+    {-62.61206897,-64.80172414 ,-67.75  -66.28448276 ,-71.09482759 ,-71.71551724 ,-72.07758621 ,-71.43965517 ,-72.31778997 ,-74.89655172 ,-76.46685961 ,-79.30172414 ,-78.90825123 ,-78.53811252 ,-81.88013136 ,-79.8362069 -75.87931034 ,-75.95689655 ,-78.83251232 ,-76.72413793 ,-75.97413793 ,-74.81034483 ,-74.11206897 ,-74.42241379 ,-70.75862069 ,-69.43965517 ,-68.72573436 ,-63.39655172 ,-63.99451411 ,-68.16133005 ,-70.39162562 ,-72.38793103 ,-73.29310345 ,-73.32758621 ,-74.65517241 ,-77.02586207 ,-76.1637931 -75.93103448 ,-76.59482759 ,-78.35344828 ,-76.8362069 -77.97413793 ,-78.36206897 ,-79.44206897 ,-80.75862069 ,-79.34546616 ,-78.25246305 ,-76.70945434 ,-74.37068966 ,-72.60006158 ,-71.47413793 ,-69.6637931 -73.62931034 ,-68.68965517 ,-67.25  -64.81034483},
+    {-79.96551724,-78.2989532 -79.89922003 ,-75.53448276 ,-73.92241379 ,-71.36206897 ,-72.18310345 ,-73.45689655 ,-73.65772669 ,-72.98275862 ,-72.47413793 ,-73.56034483 ,-79.59241379 ,-81.13362069 ,-81.70603448 ,-78.77586207 ,-73.74353448 ,-73.89851097 ,-73.86853448 ,-73.95721584 ,-74.58097291 ,-73.56034483 ,-79.13639163 ,-79.76724138 ,-81.89655172 ,-84.15086207 ,-84.30975269 ,-82.85664112 ,-83.21828818 ,-82.78065134 ,-81.15517241 ,-80.18103448 ,-77.17241379 ,-72.79916986 ,-69.93103448 ,-71.94827586 ,-71.15517241 ,-70.68965517 ,-73.32758621 ,-77.56896552 ,-79.44827586 ,-79.91010905 ,-80.97413793 ,-80.59267241 ,-80.83908046 ,-80.24137931 ,-74.35529557 ,-67.36206897 ,-69.25  -75.01724138 ,-78.04310345 ,-80.17624521 ,-83.29094828 ,-83.39752186 ,-83.62773673 ,-85.69180617}
+};//Offline 4dBm 行政
 
 
 @implementation ESTTableViewCell
@@ -180,6 +162,7 @@ static float iB_of_N[4][24]={
     
     heading = 0;
     file_count = 1;
+    dir_count = 1;
     final_x = 0;
     final_y = 0;
     
@@ -338,7 +321,7 @@ static float iB_of_N[4][24]={
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_2_UUID, BEACON_2_MAJOR, BEACON_2_MINOR)) {
             
             iB_R[1] = beacon.rssi;
-            NSLog(@"ib2=%f",iB_R[1]);
+            //NSLog(@"ib2=%f",iB_R[1]);
             
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_3_UUID, BEACON_3_MAJOR, BEACON_3_MINOR)) {
             
@@ -348,7 +331,7 @@ static float iB_of_N[4][24]={
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_4_UUID, BEACON_4_MAJOR, BEACON_4_MINOR)) {
             
             iB_R[3] = beacon.rssi;
-            NSLog(@"ib4=%f",iB_R[3]);
+            //NSLog(@"ib4=%f",iB_R[3]);
             
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_5_UUID, BEACON_5_MAJOR, BEACON_5_MINOR)) {
             
@@ -363,7 +346,7 @@ static float iB_of_N[4][24]={
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_7_UUID, BEACON_7_MAJOR, BEACON_7_MINOR)) {
             
             iB_R[6] = beacon.rssi;
-            NSLog(@"ib7=%f",iB_R[6]);
+            //NSLog(@"ib7=%f",iB_R[6]);
             
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_8_UUID, BEACON_8_MAJOR, BEACON_8_MINOR)) {
             
@@ -373,31 +356,26 @@ static float iB_of_N[4][24]={
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_9_UUID, BEACON_9_MAJOR, BEACON_9_MINOR)) {
             
             iB_R[8] = beacon.rssi;
-            NSLog(@"ib9=%f",iB_R[8]);
+            //NSLog(@"ib9=%f",iB_R[8]);
             
         }else if (isBeaconWithUUIDMajorMinor(beacon, BEACON_10_UUID, BEACON_10_MAJOR, BEACON_10_MINOR)) {
           
           iB_R[9] = beacon.rssi;
-          NSLog(@"ib10=%f",iB_R[9]);
+          //NSLog(@"ib10=%f",iB_R[9]);
           
           }
     }
     
-    //    iB_R[1] =-86.7241;
-    //    iB_R[3] =-89.9286;
-    //    iB_R[6] =-81.7931;
-    //    iB_R[8] =-85.8889;
-    
     for (int i=0; i < 9; i++) {
         if (iB_R[i] == 0) {
-            iB_R[i] = -99;
+            iB_R[i] = -100;
         }
     }
     
     /* ------------------------------------------------------------ */
     
     //訊號判斷
-    if(iB_R[1] >= -90 && iB_R[3] >= -90 && iB_R[6] >= -90 && iB_R[8] >= -90) {
+    if(iB_R[1] >= -99 && iB_R[3] >= -99 && iB_R[6] >= -99 && iB_R[8] >= -99) {
         dispatch_async(dispatch_get_main_queue(), ^{
             self.pointLabel.text = @"計算中...";
             [self filter_method];
@@ -407,60 +385,90 @@ static float iB_of_N[4][24]={
 
 -(void)filter_method {
     //signal_filter[4][30] -> 過濾 -> iB_on[0,1,2,3];
-    float temp;
     float sg_temp[4];
+    float filter_temp[4][7];
+    float temp;
     
-    if (filter_count < 30) {
+    //[0]~[6]
+    if (filter_count < 7) {
         signal_filter[0][filter_count] = iB_R[1];
         signal_filter[1][filter_count] = iB_R[3];
         signal_filter[2][filter_count] = iB_R[6];
         signal_filter[3][filter_count] = iB_R[8];
         filter_count++;
         self.fileTextLabel.text = [NSString stringWithFormat:@"%d",filter_count];
+        
     }else{
         
-        //排序
-        for(int i=0;i<30;i++){
-            for (int j=0; j<30; j++) {
-                if(signal_filter[0][i] > signal_filter[0][j])
+        for (int i=0; i<4; i++) {
+            for (int j=0; j<7; j++) {
+                NSLog(@"1 s_g[%d][%d]=%f",i,j,signal_filter[i][j]);
+            }
+            NSLog(@"\n");
+        }
+        NSLog(@"\n");
+        
+        //訊號複製
+        for (int i=6; i>0; i--) {
+            signal_filter[0][i] = signal_filter[0][i-1];
+            signal_filter[1][i] = signal_filter[1][i-1];
+            signal_filter[2][i] = signal_filter[2][i-1];
+            signal_filter[3][i] = signal_filter[3][i-1];
+        }
+        
+        signal_filter[0][0] = iB_R[1];
+        signal_filter[1][0] = iB_R[3];
+        signal_filter[2][0] = iB_R[6];
+        signal_filter[3][0] = iB_R[8];
+        
+        for (int i=0; i<4; i++) {
+            for (int j=0; j<7; j++) {
+                filter_temp[i][j] = signal_filter[i][j];
+            }
+        }
+        
+        for(int i=0;i<7;i++)
+        {
+            for(int j=0;j<7;j++)
+            {
+                if(filter_temp[0][i]<filter_temp[0][j])
                 {
-                    temp = signal_filter[0][i];
-                    signal_filter[0][i] = signal_filter[0][j];
-                    signal_filter[0][j] = temp;
+                    temp = filter_temp[0][i];
+                    filter_temp[0][i] = filter_temp[0][j];
+                    filter_temp[0][j] = temp;
                 }
-                if(signal_filter[1][i] > signal_filter[1][j])
+                if(filter_temp[1][i]<filter_temp[1][j])
                 {
-                    temp = signal_filter[1][i];
-                    signal_filter[1][i] = signal_filter[1][j];
-                    signal_filter[1][j] = temp;
+                    temp = filter_temp[1][i];
+                    filter_temp[1][i] = filter_temp[1][j];
+                    filter_temp[1][j] = temp;
                 }
-                if(signal_filter[2][i] > signal_filter[2][j])
+                if(filter_temp[2][i]<filter_temp[2][j])
                 {
-                    temp = signal_filter[2][i];
-                    signal_filter[2][i] = signal_filter[2][j];
-                    signal_filter[2][j] = temp;
+                    temp = filter_temp[2][i];
+                    filter_temp[2][i] = filter_temp[2][j];
+                    filter_temp[2][j] = temp;
                 }
-                if(signal_filter[3][i] > signal_filter[3][j])
+                if(filter_temp[3][i]<filter_temp[3][j])
                 {
-                    temp = signal_filter[3][i];
-                    signal_filter[3][i] = signal_filter[3][j];
-                    signal_filter[3][j] = temp;
+                    temp = filter_temp[3][i];
+                    filter_temp[3][i] = filter_temp[3][j];
+                    filter_temp[3][j] = temp;
                 }
             }
         }
-        //取前15
+        
         sg_temp[0] = 0; sg_temp[1] = 0; sg_temp[2] = 0; sg_temp[3] = 0;
-        for (int i=0; i<15; i++) {
-            sg_temp[0] += signal_filter[0][i];
-            sg_temp[1] += signal_filter[1][i];
-            sg_temp[2] += signal_filter[2][i];
-            sg_temp[3] += signal_filter[3][i];
+        for (int i=0; i<7; i++) {
+            sg_temp[0] += filter_temp[0][i];
+            sg_temp[1] += filter_temp[1][i];
+            sg_temp[2] += filter_temp[2][i];
+            sg_temp[3] += filter_temp[3][i];
         }
-        //平均
-        sg_temp[0] = sg_temp[0]/15;
-        sg_temp[1] = sg_temp[1]/15;
-        sg_temp[2] = sg_temp[2]/15;
-        sg_temp[3] = sg_temp[3]/15;
+        sg_temp[0] = sg_temp[0]/7;
+        sg_temp[1] = sg_temp[1]/7;
+        sg_temp[2] = sg_temp[2]/7;
+        sg_temp[3] = sg_temp[3]/7;
         
         //訊號取用
         iB_on[0] = sg_temp[0];
@@ -471,7 +479,7 @@ static float iB_of_N[4][24]={
         [timer invalidate];
         timer = nil;
         
-        filter_count = 0;
+        
         self.fileTextLabel.text = [NSString stringWithFormat:@"%d",filter_count];
         self.ScanStatus.text = [NSString stringWithFormat:@"Stop scan"];
         
@@ -488,40 +496,13 @@ static float iB_of_N[4][24]={
 
 -(void)distance_matching{
     
-    float dis[24];
-    float pt[24]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24};
+    float dis[56];
+    float pt[56]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56};
     float temp;
-    int i=0,j=0,k=0;
-    
-    
-    //方向比對
-//    for (int j =0; j<24; j++) {
-//        if (heading >= 315 || heading < 45 ){
-//            
-//            temp = sqrt(pow((iB_on[0]-iB_of_E[0][j]),2)+pow((iB_on[1]-iB_of_E[1][j]),2)+pow((iB_on[2]-iB_of_E[2][j]),2)+pow((iB_on[3]-iB_of_E[3][j]),2));
-//            dis[j] = temp;
-//            
-//        }else if(heading >=45 && heading < 135 ){
-//            
-//            temp = sqrt(pow((iB_on[0]-iB_of_S[0][j]),2)+pow((iB_on[1]-iB_of_S[1][j]),2)+pow((iB_on[2]-iB_of_S[2][j]),2)+pow((iB_on[3]-iB_of_S[3][j]),2));
-//            dis[j] = temp;
-//            
-//        }else if(heading >= 135 && heading < 225 ){
-//            
-//            temp = sqrt(pow((iB_on[0]-iB_of_W[0][j]),2)+pow((iB_on[1]-iB_of_W[1][j]),2)+pow((iB_on[2]-iB_of_W[2][j]),2)+pow((iB_on[3]-iB_of_W[3][j]),2));
-//            dis[j] = temp;
-//            
-//        }else if(heading >= 225 && heading < 315 ){
-//            
-//            temp = sqrt(pow((iB_on[0]-iB_of_N[0][j]),2)+pow((iB_on[1]-iB_of_N[1][j]),2)+pow((iB_on[2]-iB_of_N[2][j]),2)+pow((iB_on[3]-iB_of_N[3][j]),2));
-//            dis[j] = temp;
-//            
-//        }
-//    }
-    
-    
-      //AVG比對
-     for(j=0;j<24;j++)
+    int i=0,j=0;
+
+    //AVG比對
+     for(j=0;j<56;j++)
      {
          temp = sqrt(pow((iB_on[0]-iB_of_AVG[0][j]),2)+pow((iB_on[1]-iB_of_AVG[1][j]),2)+pow((iB_on[2]-iB_of_AVG[2][j]),2)+pow((iB_on[3]-iB_of_AVG[3][j]),2));
          dis[j] = temp;
@@ -529,9 +510,9 @@ static float iB_of_N[4][24]={
     
     
     
-    for(i=0;i<24;i++)
+    for(i=0;i<56;i++)
     {
-        for(j=0;j<24;j++)
+        for(j=0;j<56;j++)
         {
             if(dis[i]<dis[j])
             {
@@ -547,28 +528,193 @@ static float iB_of_N[4][24]={
     }
     
     //調整K
-    k=3;    
+    k=1;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
     //計算座標
-    
     t1 = 0; t2 = 0;
-    
     i=0;
     while (i<k) {
         t_temp = pt[i];
         [self func];
         i++;
     }
-    
-    //直接算
     final_x = t1/k;
     final_y = t2/k;
     error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
-    
     self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
     self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
-    
     [self WriteToFile];
-    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+    
+    //調整K
+    k=2;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=3;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=4;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=5;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=6;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=7;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=8;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=9;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    //調整K
+    k=10;
+    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
+    //計算座標
+    t1 = 0; t2 = 0;
+    i=0;
+    while (i<k) {
+        t_temp = pt[i];
+        [self func];
+        i++;
+    }
+    final_x = t1/k;
+    final_y = t2/k;
+    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
+    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
+    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
+    [self WriteToFile];
+    
+    
+    if (action_temp < 19) {
+        [self button03:self];
+        action_temp ++;
+    }else{
+        self.pointLabel.text = [NSString stringWithFormat:@"下一個點"];
+        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+    }
 }
 
 //設定定位座標
@@ -602,13 +748,21 @@ static float iB_of_N[4][24]={
     
 }
 
+- (IBAction)dirbutton:(id)sender {
+    dir_count ++;
+    action_temp = 0;
+    filter_count = 0;
+    
+    self.dirTextLabel.text =[NSString stringWithFormat:@"%d",dir_count];
+}
+
 -(void)WriteToFile {
     //寫一次檔案 創檔,寫檔x1
     
     NSFileManager *fm = [NSFileManager defaultManager];
     //Create 目錄
     NSString *dir;
-    dir = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/ErrorData"];
+    dir = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/ErrorData/point_%d",dir_count];
     
     //Create file
     NSString *file = [dir stringByAppendingFormat:@"/data.txt"];
@@ -625,22 +779,19 @@ static float iB_of_N[4][24]={
         NSLog(@"目錄建立失敗");
     }
     
-    NSString *strDate = [NSString stringWithFormat:@"point, error \n"];
+    NSString *strDate = [NSString stringWithFormat:@"k, error \n"];
     data = [strDate dataUsingEncoding:NSUTF8StringEncoding];
         //寫入檔案
             if ([fm fileExistsAtPath:file])  {
                 NSLog(@"檔案存在，寫入檔案");
-                filedata = [NSString stringWithFormat:@"%.1f , %f\n",point_value,error_data];
+                filedata = [NSString stringWithFormat:@"k=%d , %f\n",k,error_data];
                 data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
                 [update seekToEndOfFile];
                 [update writeData:data];
                 file_count ++;
-                NSString *n = @"-----------\n";
-                data = [n dataUsingEncoding:NSUTF8StringEncoding];
-                [update seekToEndOfFile];
-                [update writeData:data];
+                
             }else{
-                filedata = [NSString stringWithFormat:@"%.1f , %f\n",point_value,error_data];
+                filedata = [NSString stringWithFormat:@"k=%d, %f\n",k,error_data];
                 data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
                 
                 NSLog(@"檔案不存在，新增檔案並寫入");
@@ -654,116 +805,244 @@ static float iB_of_N[4][24]={
     [update closeFile];
 }
 
+//定位出的座標
 -(void)func{
-    
-    
     if(t_temp == 1)
     {
-        t1 += 0; t2 += 5;
+        t1 += 0; t2 += 0;
     }else if(t_temp == 2){
-        t1 +=0; t2 +=4;
+        t1 += 0; t2 += 2;
     }else if(t_temp == 3){
-        t1 +=0; t2 +=3;
+        t1 += 0; t2 += 4;
     }else if(t_temp == 4){
-        t1 +=0; t2 +=2;
+        t1 += 0; t2 += 6;
     }else if(t_temp == 5){
-        t1 +=0; t2 +=1;
+        t1 += 0; t2 += 8;
     }else if(t_temp == 6){
-        t1 +=0; t2 +=0;
+        t1 += 0; t2 += 10;
     }else if(t_temp == 7){
-        t1 +=1; t2 +=0;
+        t1 += 0; t2 += 12;
     }else if(t_temp == 8){
-        t1 +=1; t2 +=1;
+        t1 += 0; t2 += 14;
     }else if(t_temp == 9){
-        t1 +=1; t2 +=2;
+        t1 += 0; t2 += 16;
     }else if(t_temp == 10){
-        t1 +=1; t2 +=3;
+        t1 += 0; t2 += 18;
     }else if(t_temp == 11){
-        t1 +=1; t2 +=4;
+        t1 += 0; t2 += 20;
     }else if(t_temp == 12){
-        t1 +=1; t2 +=5;
+        t1 += 0; t2 += 22;
     }else if(t_temp == 13){
-        t1 +=2; t2 +=5;
+        t1 += 0; t2 += 24;
     }else if(t_temp == 14){
-        t1 +=2; t2 +=4;
+        t1 += 0; t2 += 26;
     }else if(t_temp == 15){
-        t1 +=2; t2 +=3;
+        t1 += 2; t2 += 26;
     }else if(t_temp == 16){
-        t1 +=2; t2 +=2;
+        t1 += 2; t2 += 24;
     }else if(t_temp == 17){
-        t1 +=2; t2 +=1;
+        t1 += 2; t2 += 22;
     }else if(t_temp == 18){
-        t1 +=2; t2 +=0;
+        t1 += 2; t2 += 20;
     }else if(t_temp == 19){
-        t1 +=3; t2 +=0;
+        t1 += 2; t2 += 18;
     }else if(t_temp == 20){
-        t1 +=3; t2 +=1;
+        t1 += 2; t2 += 16;
     }else if(t_temp == 21){
-        t1 +=3; t2 +=2;
+        t1 += 2; t2 += 14;
     }else if(t_temp == 22){
-        t1 +=3; t2 +=3;
+        t1 += 2; t2 += 12;
     }else if(t_temp == 23){
-        t1 +=3; t2 +=4;
+        t1 += 2; t2 += 10;
     }else if(t_temp == 24){
-        t1 +=3; t2 +=5;
+        t1 += 2; t2 += 8;
+    }else if(t_temp == 25){
+        t1 += 2; t2 += 6;
+    }else if(t_temp == 26){
+        t1 += 2; t2 += 4;
+    }else if(t_temp == 27){
+        t1 += 2; t2 += 2;
+    }else if(t_temp == 28){
+        t1 += 2; t2 += 0;
+    }else if(t_temp == 29){
+        t1 += 4; t2 += 0;
+    }else if(t_temp == 30){
+        t1 += 4; t2 += 2;
+    }else if(t_temp == 31){
+        t1 += 4; t2 += 4;
+    }else if(t_temp == 32){
+        t1 += 4; t2 += 6;
+    }else if(t_temp == 33){
+        t1 += 4; t2 += 8;
+    }else if(t_temp == 34){
+        t1 += 4; t2 += 10;
+    }else if(t_temp == 35){
+        t1 += 4; t2 += 12;
+    }else if(t_temp == 36){
+        t1 += 4; t2 += 14;
+    }else if(t_temp == 37){
+        t1 += 4; t2 += 16;
+    }else if(t_temp == 38){
+        t1 += 4; t2 += 18;
+    }else if(t_temp == 39){
+        t1 += 4; t2 += 20;
+    }else if(t_temp == 40){
+        t1 += 4; t2 += 22;
+    }else if(t_temp == 41){
+        t1 += 4; t2 += 24;
+    }else if(t_temp == 42){
+        t1 += 4; t2 += 26;
+    }else if(t_temp == 43){
+        t1 += 6; t2 += 26;
+    }else if(t_temp == 44){
+        t1 += 6; t2 += 24;
+    }else if(t_temp == 45){
+        t1 += 6; t2 += 22;
+    }else if(t_temp == 46){
+        t1 += 6; t2 += 20;
+    }else if(t_temp == 47){
+        t1 += 6; t2 += 18;
+    }else if(t_temp == 48){
+        t1 += 6; t2 += 16;
+    }else if(t_temp == 49){
+        t1 += 6; t2 += 14;
+    }else if(t_temp == 50){
+        t1 += 6; t2 += 12;
+    }else if(t_temp == 51){
+        t1 += 6; t2 += 10;
+    }else if(t_temp == 52){
+        t1 += 6; t2 += 8;
+    }else if(t_temp == 53){
+        t1 += 6; t2 += 6;
+    }else if(t_temp == 54){
+        t1 += 6; t2 += 4;
+    }else if(t_temp == 55){
+        t1 += 6; t2 += 2;
+    }else if(t_temp == 56){
+        t1 += 6; t2 += 0;
     }
 }
 
+//自己座標
 -(void)func2{
     
     x = 0; y = 0;
     
     if(point_value == 1)
     {
-        x += 0; y += 5;
+        x += 0; y += 0;
     }else if(point_value == 2){
-        x +=0; y +=4;
+        x += 0; y += 2;
     }else if(point_value == 3){
-        x +=0; y +=3;
+        x += 0; y += 4;
     }else if(point_value == 4){
-        x +=0; y +=2;
+        x += 0; y += 6;
     }else if(point_value == 5){
-        x +=0; y +=1;
+        x += 0; y += 8;
     }else if(point_value == 6){
-        x +=0; y +=0;
+        x += 0; y += 10;
     }else if(point_value == 7){
-        x +=1; y +=0;
+        x += 0; y += 12;
     }else if(point_value == 8){
-        x +=1; y +=1;
+        x += 0; y += 14;
     }else if(point_value == 9){
-        x +=1; y +=2;
+        x += 0; y += 16;
     }else if(point_value == 10){
-        x +=1; y +=3;
+        x += 0; y += 18;
     }else if(point_value == 11){
-        x +=1; y +=4;
+        x += 0; y += 20;
     }else if(point_value == 12){
-        x +=1; y +=5;
+        x += 0; y += 22;
     }else if(point_value == 13){
-        x +=2; y +=5;
+        x += 0; y += 24;
     }else if(point_value == 14){
-        x +=2; y +=4;
+        x += 0; y += 26;
     }else if(point_value == 15){
-        x +=2; y +=3;
+        x += 2; y += 26;
     }else if(point_value == 16){
-        x +=2; y +=2;
+        x += 2; y += 24;
     }else if(point_value == 17){
-        x +=2; y +=1;
+        x += 2; y += 22;
     }else if(point_value == 18){
-        x +=2; y +=0;
+        x += 2; y += 20;
     }else if(point_value == 19){
-        x +=3; y +=0;
+        x += 2; y += 18;
     }else if(point_value == 20){
-        x +=3; y +=1;
+        x += 2; y += 16;
     }else if(point_value == 21){
-        x +=3; y +=2;
+        x += 2; y += 14;
     }else if(point_value == 22){
-        x +=3; y +=3;
+        x += 2; y += 12;
     }else if(point_value == 23){
-        x +=3; y +=4;
+        x += 2; y += 10;
     }else if(point_value == 24){
-        x +=3; y +=5;
+        x += 2; y += 8;
+    }else if(point_value == 25){
+        x += 2; y += 6;
+    }else if(point_value == 26){
+        x += 2; y += 4;
+    }else if(point_value == 27){
+        x += 2; y += 2;
+    }else if(point_value == 28){
+        x += 2; y += 0;
+    }else if(point_value == 29){
+        x += 4; y += 0;
+    }else if(point_value == 30){
+        x += 4; y += 2;
+    }else if(point_value == 31){
+        x += 4; y += 4;
+    }else if(point_value == 32){
+        x += 4; y += 6;
+    }else if(point_value == 33){
+        x += 4; y += 8;
+    }else if(point_value == 34){
+        x += 4; y += 10;
+    }else if(point_value == 35){
+        x += 4; y += 12;
+    }else if(point_value == 36){
+        x += 4; y += 14;
+    }else if(point_value == 37){
+        x += 4; y += 16;
+    }else if(point_value == 38){
+        x += 4; y += 18;
+    }else if(point_value == 39){
+        x += 4; y += 20;
+    }else if(point_value == 40){
+        x += 4; y += 22;
+    }else if(point_value == 41){
+        x += 4; y += 24;
+    }else if(point_value == 42){
+        x += 4; y += 26;
+    }else if(point_value == 43){
+        x += 6; y += 26;
+    }else if(point_value == 44){
+        x += 6; y += 24;
+    }else if(point_value == 45){
+        x += 6; y += 22;
+    }else if(point_value == 46){
+        x += 6; y += 20;
+    }else if(point_value == 47){
+        x += 6; y += 18;
+    }else if(point_value == 48){
+        x += 6; y += 16;
+    }else if(point_value == 49){
+        x += 6; y += 14;
+    }else if(point_value == 50){
+        x += 6; y += 12;
+    }else if(point_value == 51){
+        x += 6; y += 10;
+    }else if(point_value == 52){
+        x += 6; y += 8;
+    }else if(point_value == 53){
+        x += 6; y += 6;
+    }else if(point_value == 54){
+        x += 6; y += 4;
+    }else if(point_value == 55){
+        x += 6; y += 2;
+    }else if(point_value == 56){
+        x += 6; y += 0;
     }
+    
 }
-
 
 @end

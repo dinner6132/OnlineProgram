@@ -117,7 +117,6 @@ static float iB_of_AVG[4][56]={
     {-79.96551724,-78.2989532 -79.89922003 ,-75.53448276 ,-73.92241379 ,-71.36206897 ,-72.18310345 ,-73.45689655 ,-73.65772669 ,-72.98275862 ,-72.47413793 ,-73.56034483 ,-79.59241379 ,-81.13362069 ,-81.70603448 ,-78.77586207 ,-73.74353448 ,-73.89851097 ,-73.86853448 ,-73.95721584 ,-74.58097291 ,-73.56034483 ,-79.13639163 ,-79.76724138 ,-81.89655172 ,-84.15086207 ,-84.30975269 ,-82.85664112 ,-83.21828818 ,-82.78065134 ,-81.15517241 ,-80.18103448 ,-77.17241379 ,-72.79916986 ,-69.93103448 ,-71.94827586 ,-71.15517241 ,-70.68965517 ,-73.32758621 ,-77.56896552 ,-79.44827586 ,-79.91010905 ,-80.97413793 ,-80.59267241 ,-80.83908046 ,-80.24137931 ,-74.35529557 ,-67.36206897 ,-69.25  -75.01724138 ,-78.04310345 ,-80.17624521 ,-83.29094828 ,-83.39752186 ,-83.62773673 ,-85.69180617}
 };//Offline 4dBm 行政
 
-
 @implementation ESTTableViewCell
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
@@ -166,7 +165,7 @@ static float iB_of_AVG[4][56]={
     final_x = 0;
     final_y = 0;
     
-    self.AppVersionLabel.text = @"取代均值1-10k＋dKnn";
+    self.AppVersionLabel.text = @"修改動平均56pt1-10k";
     
     self.currentHeading = [[CLHeading alloc] init];
     self.locationManager = [[CLLocationManager alloc] init];
@@ -380,7 +379,6 @@ static float iB_of_AVG[4][56]={
     if(iB_R[1] >= -99 && iB_R[3] >= -99 && iB_R[6] >= -99 && iB_R[8] >= -99) {
         dispatch_async(dispatch_get_main_queue(), ^{
             self.pointLabel.text = @"計算中...";
-            [self SignalWriteFile];
             [self filter_method];
         });
     }
@@ -473,14 +471,6 @@ static float iB_of_AVG[4][56]={
         sg_temp[1] = sg_temp[1]/5;
         sg_temp[2] = sg_temp[2]/5;
         sg_temp[3] = sg_temp[3]/5;
-        
-        for (int i=0; i<4; i++) {
-            for (int j=0; j<7; j++) {
-                if (signal_filter[i][j] <= -95) {
-                    signal_filter[i][j] = sg_temp[i];
-                }
-            }
-        }
         
         //訊號取用
         iB_on[0] = sg_temp[0];
@@ -719,36 +709,10 @@ static float iB_of_AVG[4][56]={
     self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
     [self WriteToFile];
     
-    //動態調整K
-    k=1;
-    for (int i=1; i<56; i++) {
-        if (fabs(dis[0]-dis[i]) <=1 && k < 20) {
-            k++;
-        }
-    }
-    self.KLabel.text = [NSString stringWithFormat:@"%d",k];
-    //計算座標
-    t1 = 0; t2 = 0;
-    i=0;
-    while (i<k) {
-        t_temp = pt[i];
-        [self func];
-        i++;
-    }
-    final_x = t1/k;
-    final_y = t2/k;
-    error_data=sqrt((x-final_x)*(x-final_x)+(y-final_y)*(y-final_y));
-    self.pointLabel.text = [NSString stringWithFormat:@"(%.1f,%.1f)",final_x,final_y];
-    self.ErrorData.text = [NSString stringWithFormat:@"%f",error_data];
-    [self DynamicKwRiteFile];
-    
-    
     
     if (action_temp < 19) {
-        action_temp ++;
-        self.fileTextLabel.text = [NSString stringWithFormat:@"ac_t=%d",action_temp];
         [self button03:self];
-
+        action_temp ++;
     }else{
         self.pointLabel.text = [NSString stringWithFormat:@"下一個點"];
         AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
@@ -826,6 +790,8 @@ static float iB_of_AVG[4][56]={
                 data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
                 [update seekToEndOfFile];
                 [update writeData:data];
+                file_count ++;
+                
             }else{
                 filedata = [NSString stringWithFormat:@"k=%d, %f\n",k,error_data];
                 data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
@@ -838,111 +804,6 @@ static float iB_of_AVG[4][56]={
                     NSLog(@"Create File ERROR");
                 }
             }
-    [update closeFile];
-}
-
--(void)SignalWriteFile {
-    //寫一次檔案 創檔,寫檔x1
-    
-    NSFileManager *fm = [NSFileManager defaultManager];
-    //Create 目錄
-    NSString *dir;
-    dir = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/Singal/point_%d",dir_count];
-    
-    //Create file
-    NSString *file = [dir stringByAppendingFormat:@"/signal_data.txt"];
-    NSError *error;
-    NSString *filedata;
-    NSFileHandle *update = [NSFileHandle fileHandleForWritingAtPath:file];
-    NSData *data;
-    
-    BOOL success = [fm createDirectoryAtPath:
-                    dir withIntermediateDirectories:YES attributes:nil error:&error];
-    if (success) {
-        NSLog(@"目錄建立成功");
-    }else {
-        NSLog(@"目錄建立失敗");
-    }
-    
-    NSString *strDate = [NSString stringWithFormat:@"major, rssi\n"];
-    data = [strDate dataUsingEncoding:NSUTF8StringEncoding];
-    //寫入檔案
-    if ([fm fileExistsAtPath:file])  {
-        NSLog(@"檔案存在，寫入檔案");
-        
-        for (int i=0; i < [self.beaconsArray count]; i++) {
-            CLBeacon *beacon = [self.beaconsArray objectAtIndex:i];
-            NSString *major = [NSString stringWithFormat:@"%@",beacon.major];
-            NSString *rssi = [NSString stringWithFormat:@"%ld",(long)beacon.rssi];
-            filedata = [NSString stringWithFormat:@"%@,%@\n",major,rssi];
-            data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
-            [update seekToEndOfFile];
-            [update writeData:data];
-        }
-        NSString *n = @"--------------------\n";
-        data = [n dataUsingEncoding:NSUTF8StringEncoding];
-        [update seekToEndOfFile];
-        [update writeData:data];
-        
-    }else{
-        filedata = [NSString stringWithFormat:@"major,rssi\n"];
-        data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
-        
-        NSLog(@"檔案不存在，新增檔案並寫入");
-        success = [fm createFileAtPath:file contents:data attributes:nil];
-        if (success) {
-            NSLog(@"Create File success");
-        }else{
-            NSLog(@"Create File ERROR");
-        }
-    }
-    [update closeFile];
-}
-
--(void)DynamicKwRiteFile {
-    //寫一次檔案 創檔,寫檔x1
-    
-    NSFileManager *fm = [NSFileManager defaultManager];
-    //Create 目錄
-    NSString *dir;
-    dir = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/DkNN_ErrorData/point_%d",dir_count];
-    
-    //Create file
-    NSString *file = [dir stringByAppendingFormat:@"/DKNNdata.txt"];
-    NSError *error;
-    NSString *filedata;
-    NSFileHandle *update = [NSFileHandle fileHandleForWritingAtPath:file];
-    NSData *data;
-    
-    BOOL success = [fm createDirectoryAtPath:
-                    dir withIntermediateDirectories:YES attributes:nil error:&error];
-    if (success) {
-        NSLog(@"目錄建立成功");
-    }else {
-        NSLog(@"目錄建立失敗");
-    }
-    
-    NSString *strDate = [NSString stringWithFormat:@"k, error \n"];
-    data = [strDate dataUsingEncoding:NSUTF8StringEncoding];
-    //寫入檔案
-    if ([fm fileExistsAtPath:file])  {
-        NSLog(@"檔案存在，寫入檔案");
-        filedata = [NSString stringWithFormat:@"k=%d , %f\n",k,error_data];
-        data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
-        [update seekToEndOfFile];
-        [update writeData:data];
-    }else{
-        filedata = [NSString stringWithFormat:@"k=%d, %f\n",k,error_data];
-        data = [filedata dataUsingEncoding:NSUTF8StringEncoding];
-        
-        NSLog(@"檔案不存在，新增檔案並寫入");
-        success = [fm createFileAtPath:file contents:data attributes:nil];
-        if (success) {
-            NSLog(@"Create File success");
-        }else{
-            NSLog(@"Create File ERROR");
-        }
-    }
     [update closeFile];
 }
 
